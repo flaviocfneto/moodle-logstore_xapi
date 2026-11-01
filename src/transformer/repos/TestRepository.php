@@ -102,6 +102,26 @@ class TestRepository extends Repository {
     }
 
     /**
+     * Which candidate names match a user's first or last name, ignoring case?
+     *
+     * @param array $names Candidate names, already normalized to lowercase.
+     * @return array Matching names, keyed by their lowercase value.
+     */
+    public function user_names_exist_case_insensitive(array $names): array {
+        $names = array_fill_keys(array_map('mb_strtolower', $names), true);
+        $found = [];
+        foreach ($this->read_records('user', []) as $user) {
+            foreach (['firstname', 'lastname'] as $field) {
+                $name = mb_strtolower((string) ($user->$field ?? ''));
+                if (isset($names[$name])) {
+                    $found[$name] = true;
+                }
+            }
+        }
+        return $found;
+    }
+
+    /**
      * Copy a fixture record, converting scalar values to strings as the database driver does.
      *
      * @param object $record The fixture record.

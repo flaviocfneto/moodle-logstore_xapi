@@ -54,6 +54,36 @@ class MoodleRepository extends Repository {
     }
 
     /**
+     * Which candidate names match a user's first or last name, ignoring case?
+     *
+     * @param array $names Candidate names, already normalized to lowercase.
+     * @return array Matching names, keyed by their lowercase value.
+     */
+    public function user_names_exist_case_insensitive(array $names): array {
+        $names = array_values(array_unique(array_map('mb_strtolower', $names)));
+        if (empty($names)) {
+            return [];
+        }
+
+        [$firstnamesql, $firstnameparams] = $this->store->get_in_or_equal(
+            $names,
+            SQL_PARAMS_NAMED,
+            'firstname'
+        );
+        [$lastnamesql, $lastnameparams] = $this->store->get_in_or_equal(
+            $names,
+            SQL_PARAMS_NAMED,
+            'lastname'
+        );
+        $sql = "SELECT LOWER(firstname) FROM {user} WHERE LOWER(firstname) $firstnamesql
+            UNION
+            SELECT LOWER(lastname) FROM {user} WHERE LOWER(lastname) $lastnamesql";
+        $found = $this->store->get_fieldset_sql($sql, array_merge($firstnameparams, $lastnameparams));
+
+        return array_fill_keys($found, true);
+    }
+
+    /**
      * Reads an object from the store with the given type and query, without the cache.
      *
      * @param string $type The name of the table to retrieve from.
