@@ -210,6 +210,21 @@ function logstore_xapi_upgrade_routes(): void {
 }
 
 /**
+ * Preserve the pre-existing Send content behavior for sites being upgraded.
+ *
+ * @return void
+ */
+function logstore_xapi_upgrade_content_settings(): void {
+    $sendcontent = get_config('logstore_xapi', 'sendcontent');
+    $legacydefault = $sendcontent === false ? 1 : (int) $sendcontent;
+    foreach (['sendessaytext', 'sendgradingfeedback'] as $setting) {
+        if (get_config('logstore_xapi', $setting) === false) {
+            set_config($setting, $legacydefault, 'logstore_xapi');
+        }
+    }
+}
+
+/**
  * Determine what needs to be done for each upgrade step.
  *
  * @param string $oldversion Prior version of plugin during an upgrade.
@@ -320,6 +335,11 @@ function xmldb_logstore_xapi_upgrade($oldversion) {
     if ($oldversion < 2026110100) {
         logstore_xapi_upgrade_routes();
         upgrade_plugin_savepoint(true, 2026110100, 'logstore', 'xapi');
+    }
+
+    if ($oldversion < 2026110101) {
+        logstore_xapi_upgrade_content_settings();
+        upgrade_plugin_savepoint(true, 2026110101, 'logstore', 'xapi');
     }
 
     return true;
