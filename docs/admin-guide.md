@@ -47,7 +47,7 @@ To check that statements reach the LRS, look for "xAPI statements sent to the LR
 
 - **Include actions with these routes** lists every supported event (see [Supported events](supported-events.md)). New sites send all of them except private messages, notes and searches, whose statements carry the text of the message or note, or the search query. Existing choices are otherwise retained on upgrade; `user_graded` is appended so gradebook marks can be reported. If the saved list was empty, only that event is enabled.
 - **Log guest actions** sends the actions of guests and of users who aren't logged in.
-- **Anonymous events** decides what happens to events Moodle marks as anonymous, such as anonymous feedback, or assignments with blind marking: sent with an anonymous actor in place of the hidden user (the default), or not sent.
+- **Anonymous events** decides what happens to events Moodle marks as anonymous, such as anonymous feedback, or assignments with blind marking: sent with an anonymous actor in place of the hidden user (the default), or not sent. Grading feedback text is omitted from anonymous events even when feedback export is enabled.
 
 ## How users are identified
 

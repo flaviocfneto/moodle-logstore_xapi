@@ -138,4 +138,20 @@ final class repository_cache_test extends advanced_testcase {
         $this->assertSame('Grace', $repo->read_record_by_id('user', (string) $user->id)->firstname);
         $this->assertSame($reads + 1, $DB->perf_get_reads());
     }
+
+    /**
+     * The Moodle repository finds first and last names without case sensitivity.
+     *
+     * @return void
+     */
+    public function test_moodle_repository_name_lookup_is_case_insensitive(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->getDataGenerator()->create_user(['firstname' => 'Sakura', 'lastname' => 'Uchiha']);
+        $repo = new \src\transformer\repos\MoodleRepository($DB);
+
+        $this->assertTrue($repo->user_name_exists_case_insensitive('sakura'));
+        $this->assertTrue($repo->user_name_exists_case_insensitive('UCHIHA'));
+        $this->assertFalse($repo->user_name_exists_case_insensitive('not-a-name'));
+    }
 }

@@ -54,6 +54,21 @@ class MoodleRepository extends Repository {
     }
 
     /**
+     * Does a user have this first or last name, ignoring case?
+     *
+     * @param string $name The name to find.
+     * @return bool
+     */
+    public function user_name_exists_case_insensitive(string $name): bool {
+        $select = $this->store->sql_equal('firstname', ':firstname', false)
+            . ' OR ' . $this->store->sql_equal('lastname', ':lastname', false);
+        return $this->store->record_exists_select('user', $select, [
+            'firstname' => $name,
+            'lastname' => $name,
+        ]);
+    }
+
+    /**
      * Reads an object from the store with the given type and query, without the cache.
      *
      * @param string $type The name of the table to retrieve from.

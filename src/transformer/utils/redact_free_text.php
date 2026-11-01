@@ -100,18 +100,20 @@ function redact_free_text(array $config, ?string $text, int $courseid = 0, array
  */
 function redact_free_text_names(array $config, string $text, int $courseid, array $userids): array {
     // Cached per repository, so one emit batch reads a course's people once.
-    static $cache = [];
+    static $cache;
     $repo = $config['repo'];
-    $key = spl_object_id($repo);
-    $cache[$key] = $cache[$key] ?? ['user' => [], 'course' => [], 'word' => []];
-    $c = &$cache[$key];
+    $cache ??= new \WeakMap();
+    if (!isset($cache[$repo])) {
+        $cache[$repo] = (object) ['user' => [], 'course' => [], 'word' => []];
+    }
+    $c = $cache[$repo];
 
     $readuser = function (int $id) use ($repo, &$c) {
-        if (!array_key_exists($id, $c['user'])) {
+        if (!array_key_exists($id, $c->user)) {
             $found = $id > 0 ? $repo->read_records('user', ['id' => $id]) : [];
-            $c['user'][$id] = empty($found) ? null : reset($found);
+            $c->user[$id] = empty($found) ? null : reset($found);
         }
-        return $c['user'][$id];
+        return $c->user[$id];
     };
 
     $people = [];
@@ -122,16 +124,16 @@ function redact_free_text_names(array $config, string $text, int $courseid, arra
         }
     }
     if ($courseid > 1) {
-        if (!array_key_exists($courseid, $c['course'])) {
+        if (!array_key_exists($courseid, $c->course)) {
             $ids = [];
             foreach ($repo->read_records('enrol', ['courseid' => $courseid]) as $enrol) {
                 foreach ($repo->read_records('user_enrolments', ['enrolid' => $enrol->id]) as $ue) {
                     $ids[(int) $ue->userid] = (int) $ue->userid;
                 }
             }
-            $c['course'][$courseid] = $ids;
+            $c->course[$courseid] = $ids;
         }
-        $people += $c['course'][$courseid];
+        $people += $c->course[$courseid];
     }
 
     $names = [];
@@ -179,11 +181,10 @@ function redact_free_text_names(array $config, string $text, int $courseid, arra
         }
     }
     foreach (array_keys($words) as $word) {
-        if (!array_key_exists($word, $c['word'])) {
-            $c['word'][$word] = !empty($repo->read_records('user', ['firstname' => $word]))
-                || !empty($repo->read_records('user', ['lastname' => $word]));
+        if (!array_key_exists($word, $c->word)) {
+            $c->word[$word] = $repo->user_name_exists_case_insensitive($word);
         }
-        if ($c['word'][$word]) {
+        if ($c->word[$word]) {
             $names[$word] = true;
         }
     }

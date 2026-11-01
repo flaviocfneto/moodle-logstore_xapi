@@ -122,6 +122,18 @@ final class redact_free_text_test extends \basic_testcase {
     }
 
     /**
+     * The site-wide name lookup matches stored names regardless of case.
+     *
+     * @covers ::redact_free_text
+     * @return void
+     */
+    public function test_global_name_lookup_is_case_insensitive(): void {
+        $users = [(object) ['id' => 2, 'firstname' => 'Sakura', 'lastname' => '', 'username' => 'sakura']];
+
+        $this->assertSame('[name] replied.', $this->redact('sakura replied.', 0, [], $users));
+    }
+
+    /**
      * Empty input is safe and normalized text is capped after HTML decoding.
      *
      * @covers ::redact_free_text

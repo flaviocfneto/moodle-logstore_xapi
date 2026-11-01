@@ -101,7 +101,8 @@ function assignment_graded(array $config, \stdClass $event) {
         !is_null($gradecomment) && trim(strip_tags((string) $gradecomment)) !== '';
     $feedbackpresent = $statement['result']['extensions']['https://w3id.org/xapi/ocsw/extensions/feedback_present'];
     $sendcontent = utils\is_sending_content($config);
-    $sendfeedbacktext = $feedbackpresent && $sendcontent && !empty($config['send_grading_feedback']);
+    $sendfeedbacktext = $feedbackpresent && $sendcontent
+        && !empty($config['send_grading_feedback']) && empty($event->anonymous);
     if ($sendfeedbacktext) {
         $statement['result']['response'] = utils\redact_free_text(
             $config,

@@ -102,31 +102,49 @@ function user_graded(array $config, \stdClass $event) {
         $object = utils\get_activity\course_module($config, $course, (int) $cm->id);
     }
 
-    // Whether a comment exists, never its words. The assignment's own comment
-    // counts, as on the assignment graded statement, and so does feedback
-    // typed in the gradebook. Assignment marking fires this event just before
-    // that one, so both must say the same.
+    // Use the historical snapshot that matches this event, never current feedback.
+    $feedbackhistory = null;
+    $historytime = null;
+    $ambiguoushistory = false;
+    $eventtime = (int) ($event->timecreated ?? 0);
+    if ($eventtime > 0) {
+        $gradehistories = $repo->read_records(
+            'grade_grades_history',
+            [
+                'oldid' => $event->objectid,
+                'itemid' => $itemid,
+                'userid' => $learnerid,
+            ],
+            'timemodified DESC, id DESC'
+        );
+        foreach ($gradehistories as $history) {
+            $modified = (int) ($history->timemodified ?? 0);
+            if (
+                $modified <= 0 || $modified > $eventtime || !isset($history->finalgrade)
+                || (float) $history->finalgrade !== (float) $finalgrade
+            ) {
+                continue;
+            }
+            if ($historytime === null || $modified > $historytime) {
+                $feedbackhistory = $history;
+                $historytime = $modified;
+                $ambiguoushistory = false;
+            } else if (
+                $modified === $historytime
+                && ($history->feedback ?? null) !== ($feedbackhistory->feedback ?? null)
+            ) {
+                $ambiguoushistory = true;
+            }
+        }
+    }
+    if ($ambiguoushistory) {
+        $feedbackhistory = null;
+    }
     $hastext = function ($text) {
         return !is_null($text) && trim(strip_tags((string) $text)) !== '';
     };
-    $feedbacktext = $grade->feedback ?? null;
+    $feedbacktext = $feedbackhistory->feedback ?? null;
     $feedbackpresent = $hastext($feedbacktext);
-    if ($isassign && !$feedbackpresent) {
-        $assigngrades = $repo->read_records('assign_grades', [
-            'assignment' => $item->iteminstance,
-            'userid' => $learnerid,
-        ], 'attemptnumber DESC');
-        $assigngrade = empty($assigngrades) ? null : reset($assigngrades);
-        if ($assigngrade) {
-            $comments = $repo->read_records('assignfeedback_comments', [
-                'assignment' => $item->iteminstance,
-                'grade' => $assigngrade->id,
-            ]);
-            $comment = empty($comments) ? null : reset($comments);
-            $feedbacktext = $comment->commenttext ?? null;
-            $feedbackpresent = $hastext($feedbacktext);
-        }
-    }
 
     $raw = (float) $finalgrade;
     $min = (float) ($item->grademin ?? 0);
@@ -160,7 +178,10 @@ function user_graded(array $config, \stdClass $event) {
     if ($max > $min && $raw >= $min && $raw <= $max) {
         $statement['result']['score'] = utils\get_score($raw, $min, $max);
     }
-    if ($feedbackpresent && utils\is_sending_content($config) && !empty($config['send_grading_feedback'])) {
+    if (
+        $feedbackpresent && utils\is_sending_content($config) && !empty($config['send_grading_feedback'])
+        && empty($event->anonymous)
+    ) {
         $statement['result']['response'] = utils\redact_free_text(
             $config,
             (string) $feedbacktext,

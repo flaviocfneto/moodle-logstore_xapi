@@ -102,6 +102,25 @@ class TestRepository extends Repository {
     }
 
     /**
+     * Does a user have this first or last name, ignoring case?
+     *
+     * @param string $name The name to find.
+     * @return bool
+     */
+    public function user_name_exists_case_insensitive(string $name): bool {
+        $name = mb_strtolower($name);
+        foreach ($this->read_records('user', []) as $user) {
+            if (
+                mb_strtolower((string) ($user->firstname ?? '')) === $name
+                || mb_strtolower((string) ($user->lastname ?? '')) === $name
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Copy a fixture record, converting scalar values to strings as the database driver does.
      *
      * @param object $record The fixture record.

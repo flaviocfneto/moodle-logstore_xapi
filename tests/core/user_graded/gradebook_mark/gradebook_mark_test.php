@@ -88,9 +88,10 @@ final class gradebook_mark_test extends \logstore_xapi\xapi_test_case {
      * @covers ::user_graded
      * @return void
      */
-    public function test_assignment_comment_marks_feedback_present(): void {
+    public function test_assignment_comment_without_history_is_omitted(): void {
         $data = $this->get_test_data();
         $data->grade_grades[0]->feedback = '';
+        $data->grade_grades_history = [];
         $data->assign_grades = [(object) [
             'id' => 11,
             'assignment' => 1,
@@ -109,8 +110,30 @@ final class gradebook_mark_test extends \logstore_xapi\xapi_test_case {
 
         $statements = \src\transformer\events\core\user_graded($config, $this->get_event());
 
-        $this->assertTrue($statements[0]['result']['extensions']['https://w3id.org/xapi/ocsw/extensions/feedback_present']);
+        $this->assertFalse($statements[0]['result']['extensions']['https://w3id.org/xapi/ocsw/extensions/feedback_present']);
         $this->assertArrayNotHasKey('response', $statements[0]['result']);
+    }
+
+    /**
+     * Gradebook feedback comes from the history row matching the event-time grade.
+     *
+     * @covers ::user_graded
+     * @return void
+     */
+    public function test_event_time_feedback_is_used_instead_of_current_feedback(): void {
+        $data = $this->get_test_data();
+        $data->grade_grades[0]->feedback = 'Later feedback';
+        $data->grade_grades_history[0]->feedback = 'Feedback at event time';
+        $config = $this->get_transformer_config();
+        $config['send_content'] = true;
+        $config['send_grading_feedback'] = true;
+        $config['redact_free_text'] = false;
+        $config['event_function'] = '\\src\\transformer\\events\\core\\user_graded';
+        $config['repo'] = new \src\transformer\repos\TestRepository($data);
+
+        $statements = \src\transformer\events\core\user_graded($config, $this->get_event());
+
+        $this->assertSame('Feedback at event time', $statements[0]['result']['response']);
     }
 
     /**
@@ -120,10 +143,16 @@ final class gradebook_mark_test extends \logstore_xapi\xapi_test_case {
      * @return void
      */
     public function test_blindmarked_assignment_hides_learner_actor(): void {
-        $statements = $this->get_blindmarked_statements(['anonymousevents' => 'anonymise']);
+        $statements = $this->get_blindmarked_statements([
+            'anonymousevents' => 'anonymise',
+            'send_content' => true,
+            'send_grading_feedback' => true,
+            'redact_free_text' => false,
+        ]);
 
         $this->assertSame('Anonymous Course Participant', $statements[0]['actor']['name']);
         $this->assertSame('anonymous', $statements[0]['actor']['account']['name']);
+        $this->assertArrayNotHasKey('response', $statements[0]['result']);
     }
 
     /**
@@ -179,6 +208,7 @@ final class gradebook_mark_test extends \logstore_xapi\xapi_test_case {
     private function get_assignment_feedback_statement(array $overrides): array {
         $data = $this->get_test_data();
         $data->grade_grades[0]->feedback = '';
+        $data->grade_grades_history[0]->feedback = '<p>Aya Uchiha a.b@example.org</p>';
         $data->assign_grades = [(object) [
             'id' => 11,
             'assignment' => 1,

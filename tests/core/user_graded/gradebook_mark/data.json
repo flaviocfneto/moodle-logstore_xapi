@@ -14,6 +14,20 @@
       "feedback": "<p>Gradebook feedback</p>"
     }
   ],
+  "grade_grades_history": [
+    {
+      "id": 20,
+      "action": 2,
+      "oldid": 9,
+      "timemodified": 1433946701,
+      "loggeduser": 1,
+      "itemid": 5,
+      "userid": 2,
+      "finalgrade": 8.5,
+      "feedback": "Gradebook feedback",
+      "feedbackformat": 0
+    }
+  ],
   "grade_items": [
     {
       "id": 5,

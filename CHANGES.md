@@ -13,7 +13,9 @@ the authoritative record.
   grading comments continue to report presence even when their bodies are omitted.
 - **Gradebook marks are sent as scored statements.** The `user_graded` route is appended during
   upgrade, including when the saved route list is empty; in that case, only `user_graded` is
-  selected. The statement uses the grade captured by the event and reports feedback presence.
+  selected. The statement uses the grade captured by the event and reports feedback presence only
+  when a matching grade-history snapshot establishes it. Feedback text is never included for
+  anonymous events, including blind-marked assignments.
 
 ## 5.4.0 (2026-10-29)
 

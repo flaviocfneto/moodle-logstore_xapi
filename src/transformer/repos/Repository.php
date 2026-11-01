@@ -47,6 +47,14 @@ abstract class Repository extends PhpObj {
     abstract public function read_records(string $type, array $query, string $sort = '');
 
     /**
+     * Does a user have this first or last name, ignoring case?
+     *
+     * @param string $name The name to find.
+     * @return bool
+     */
+    abstract public function user_name_exists_case_insensitive(string $name): bool;
+
+    /**
      * Reads an object from the store with the given type and query.
      *
      * A record read before by this repository is returned from the cache. Each call returns its

@@ -99,4 +99,24 @@ final class existing_assignment_graded_comment_test extends \logstore_xapi\xapi_
 
         $this->assertArrayNotHasKey('response', $statements[0]['result']);
     }
+
+    /**
+     * Assignment feedback text remains omitted for anonymous events even when enabled.
+     *
+     * @covers \\src\\transformer\\events\\mod_assign\\assignment_graded
+     * @return void
+     */
+    public function test_anonymous_event_omits_grading_feedback(): void {
+        $event = $this->get_event();
+        $event->anonymous = 1;
+        $config = $this->get_transformer_config();
+        $config['send_content'] = true;
+        $config['send_grading_feedback'] = true;
+        $config['redact_free_text'] = false;
+        $config['event_function'] = '\\src\\transformer\\events\\mod_assign\\assignment_graded';
+
+        $statements = \src\transformer\events\mod_assign\assignment_graded($config, $event);
+
+        $this->assertArrayNotHasKey('response', $statements[0]['result']);
+    }
 }
