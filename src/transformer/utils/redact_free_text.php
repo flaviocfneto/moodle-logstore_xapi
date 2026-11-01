@@ -180,10 +180,16 @@ function redact_free_text_names(array $config, string $text, int $courseid, arra
             break;
         }
     }
-    foreach (array_keys($words) as $word) {
-        if (!array_key_exists($word, $c->word)) {
-            $c->word[$word] = $repo->user_name_exists_case_insensitive($word);
+    $uncachedwords = array_values(array_filter(array_keys($words), function ($word) use ($c) {
+        return !array_key_exists($word, $c->word);
+    }));
+    if (!empty($uncachedwords)) {
+        $foundnames = $repo->user_names_exist_case_insensitive($uncachedwords);
+        foreach ($uncachedwords as $word) {
+            $c->word[$word] = isset($foundnames[$word]);
         }
+    }
+    foreach (array_keys($words) as $word) {
         if ($c->word[$word]) {
             $names[$word] = true;
         }

@@ -124,6 +124,7 @@ final class gradebook_mark_test extends \logstore_xapi\xapi_test_case {
         $data = $this->get_test_data();
         $data->grade_grades[0]->feedback = 'Later feedback';
         $data->grade_grades_history[0]->feedback = 'Feedback at event time';
+        $data->grade_grades_history[0]->finalgrade = 8.500001;
         $config = $this->get_transformer_config();
         $config['send_content'] = true;
         $config['send_grading_feedback'] = true;

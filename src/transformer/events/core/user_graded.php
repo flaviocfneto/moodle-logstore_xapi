@@ -121,7 +121,7 @@ function user_graded(array $config, \stdClass $event) {
             $modified = (int) ($history->timemodified ?? 0);
             if (
                 $modified <= 0 || $modified > $eventtime || !isset($history->finalgrade)
-                || (float) $history->finalgrade !== (float) $finalgrade
+                    || grade_floats_different((float) $history->finalgrade, (float) $finalgrade)
             ) {
                 continue;
             }

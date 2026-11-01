@@ -150,8 +150,12 @@ final class repository_cache_test extends advanced_testcase {
         $this->getDataGenerator()->create_user(['firstname' => 'Sakura', 'lastname' => 'Uchiha']);
         $repo = new \src\transformer\repos\MoodleRepository($DB);
 
-        $this->assertTrue($repo->user_name_exists_case_insensitive('sakura'));
-        $this->assertTrue($repo->user_name_exists_case_insensitive('UCHIHA'));
-        $this->assertFalse($repo->user_name_exists_case_insensitive('not-a-name'));
+        $reads = $DB->perf_get_reads();
+        $matches = $repo->user_names_exist_case_insensitive(['sakura', 'UCHIHA', 'not-a-name']);
+
+        $this->assertArrayHasKey('sakura', $matches);
+        $this->assertArrayHasKey('uchiha', $matches);
+        $this->assertArrayNotHasKey('not-a-name', $matches);
+        $this->assertSame($reads + 1, $DB->perf_get_reads());
     }
 }
