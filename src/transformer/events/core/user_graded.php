@@ -39,6 +39,9 @@ use src\transformer\utils;
  * @return array
  */
 function user_graded(array $config, \stdClass $event) {
+    global $CFG;
+    require_once($CFG->dirroot . '/lib/gradelib.php');
+
     $repo = $config['repo'];
 
     // Statements are built in the background, after the grade may have been
