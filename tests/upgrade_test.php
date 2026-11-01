@@ -83,4 +83,57 @@ final class upgrade_test extends \advanced_testcase {
         $this->assertSame($expected, explode(',', get_config('logstore_xapi', 'routes')));
         $this->assertContains('\\core\\event\\user_graded', $expected);
     }
+
+    /**
+     * Unset text gates preserve the previous Send content behavior on upgrade.
+     *
+     * @covers ::logstore_xapi_upgrade_content_settings
+     * @return void
+     */
+    public function test_upgrade_enables_unset_text_settings(): void {
+        $this->resetAfterTest();
+        unset_config('sendcontent', 'logstore_xapi');
+        unset_config('sendessaytext', 'logstore_xapi');
+        unset_config('sendgradingfeedback', 'logstore_xapi');
+
+        logstore_xapi_upgrade_content_settings();
+
+        $this->assertTrue((bool) get_config('logstore_xapi', 'sendessaytext'));
+        $this->assertTrue((bool) get_config('logstore_xapi', 'sendgradingfeedback'));
+    }
+
+    /**
+     * An old Send content opt-out remains an opt-out for the new text settings.
+     *
+     * @covers ::logstore_xapi_upgrade_content_settings
+     * @return void
+     */
+    public function test_upgrade_inherits_send_content_opt_out(): void {
+        $this->resetAfterTest();
+        set_config('sendcontent', 0, 'logstore_xapi');
+        unset_config('sendessaytext', 'logstore_xapi');
+        unset_config('sendgradingfeedback', 'logstore_xapi');
+
+        logstore_xapi_upgrade_content_settings();
+
+        $this->assertFalse((bool) get_config('logstore_xapi', 'sendessaytext'));
+        $this->assertFalse((bool) get_config('logstore_xapi', 'sendgradingfeedback'));
+    }
+
+    /**
+     * Explicit admin choices remain unchanged by the compatibility migration.
+     *
+     * @covers ::logstore_xapi_upgrade_content_settings
+     * @return void
+     */
+    public function test_upgrade_preserves_saved_text_settings(): void {
+        $this->resetAfterTest();
+        set_config('sendessaytext', 0, 'logstore_xapi');
+        set_config('sendgradingfeedback', 0, 'logstore_xapi');
+
+        logstore_xapi_upgrade_content_settings();
+
+        $this->assertFalse((bool) get_config('logstore_xapi', 'sendessaytext'));
+        $this->assertFalse((bool) get_config('logstore_xapi', 'sendgradingfeedback'));
+    }
 }

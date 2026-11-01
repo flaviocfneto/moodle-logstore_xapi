@@ -9,8 +9,10 @@ the authoritative record.
 - **Statement content is configurable in the UI.** `Send content` controls text bodies and answers;
   activity names and titles can still appear when it is off. `Redact free text` defaults on and
   applies to both. Disabling it explicitly permits included text and names to be sent unredacted.
-  New `Send essay answer text` and `Send grading feedback comments` options default off. Essays and
-  grading comments continue to report presence even when their bodies are omitted.
+  New `Send essay answer text` and `Send grading feedback comments` options default off on new
+  installs. On upgrade, unset values inherit the previous `Send content` setting, preserving the
+  prior output for sites that had it enabled. Essays and grading comments continue to report
+  presence even when their bodies are omitted.
 - **Gradebook marks are sent as scored statements.** The `user_graded` route is appended during
   upgrade, including when the saved route list is empty; in that case, only `user_graded` is
   selected. The statement uses the grade captured by the event and reports feedback presence only
